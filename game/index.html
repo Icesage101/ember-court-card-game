@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Ember Court — a duel of cunning cards</title>
+<style>
+  :root {
+    --felt: #123524;
+    --felt-dark: #0b2418;
+    --gold: #e8b64c;
+    --gold-dim: #b98a2e;
+    --ink: #f4ead2;
+    --ink-dim: #c9b98f;
+    --panel: #1c2f26;
+    --red: #d94f3d;
+    --blue: #4f9fd8;
+    --green: #5da85a;
+    --purple: #9b7ed9;
+    --flame: #e0653a;
+    --tide: #4f9fd8;
+    --thorn: #5da85a;
+    --gale: #c9a86a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0f0c;
+    font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
+  #table {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    background:
+      radial-gradient(ellipse at 50% 38%, #1d5c39 0%, var(--felt) 45%, var(--felt-dark) 100%);
+    padding: 10px 18px 14px;
+  }
+  /* ---------- top bar ---------- */
+  #topbar { display: flex; align-items: center; gap: 14px; padding: 2px 4px 8px; }
+  #topbar h1 { margin: 0; font-size: 26px; letter-spacing: 3px; color: var(--gold);
+    text-shadow: 0 2px 8px rgba(0,0,0,.6); white-space: nowrap; }
+  #topbar h1 span { font-size: 13px; letter-spacing: 2px; color: var(--ink-dim); display: block; }
+  #roundbox { margin-left: auto; text-align: right; font-size: 15px; line-height: 1.35; }
+  #roundbox b { color: var(--gold); font-size: 18px; }
+  .tbtn {
+    background: #2a4232; color: var(--ink); border: 1px solid var(--gold-dim);
+    border-radius: 6px; padding: 6px 12px; font-family: inherit; font-size: 14px;
+    cursor: pointer;
+  }
+  .tbtn:hover { background: #3a5a44; }
+  .tbtn:disabled { opacity: .45; cursor: default; }
+  /* ---------- rows ---------- */
+  .side { display: flex; align-items: center; gap: 16px; min-height: 118px; }
+  .portrait {
+    width: 92px; height: 108px; flex: none; border-radius: 10px;
+    border: 2px solid var(--gold-dim); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    background: linear-gradient(160deg, #3a2a4d, #1d1428); text-align: center;
+  }
+  .portrait.you { background: linear-gradient(160deg, #274a33, #12291a); }
+  .portrait .face { font-size: 40px; line-height: 1; }
+  .portrait .who { font-size: 12px; letter-spacing: 1px; color: var(--ink-dim); }
+  .portrait .who b { display: block; color: var(--ink); font-size: 13px; letter-spacing: 1px; }
+  .meters { flex: none; width: 250px; }
+  .lifebar { height: 22px; border: 1px solid #000; border-radius: 11px; overflow: hidden;
+    background: #2a0f0b; position: relative; }
+  .lifebar > i { display: block; height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c);
+    transition: width .45s ease; }
+  .lifebar.you > i { background: linear-gradient(90deg, #2e7d32, #66bb6a); }
+  .lifebar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 2px #000; }
+  .emberrow { display: flex; align-items: center; gap: 5px; margin-top: 7px; font-size: 13px; color: var(--ink-dim); }
+  .pip { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #7a5c1e;
+    background: #241a08; display: inline-block; }
+  .pip.on { background: radial-gradient(circle at 35% 35%, #ffe9a8, var(--gold) 60%, #8a6414); }
+  .pip.max { border-style: dashed; opacity: .55; }
+  .tricks { margin-top: 5px; font-size: 13px; color: var(--ink-dim); }
+  .tricks b { color: var(--gold); }
+  .hand { flex: 1; display: flex; justify-content: center; gap: 8px; min-width: 0; }
+  /* ---------- cards ---------- */
+  .card {
+    width: 104px; height: 148px; flex: none; border-radius: 10px; position: relative;
+    background: linear-gradient(165deg, #fdf6e3, #e8dcc0 70%, #d9c9a3);
+    color: #221a10; border: 2px solid #8a6d2f; box-shadow: 0 4px 10px rgba(0,0,0,.55);
+    padding: 22px 8px 7px; text-align: center; user-select: none;
+  }
+  .card .cost {
+    position: absolute; top: -9px; left: -9px; width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffe9a8, var(--gold) 60%, #8a6414);
+    border: 2px solid #6b4d10; color: #241a08; font-weight: bold; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; z-index: 2;
+  }
+  .card .power {
+    position: absolute; top: -9px; right: -9px; width: 28px; height: 28px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffb199, #c0392b 60%, #7a1f14);
+    border: 2px solid #5e150c; color: #fff; font-weight: bold; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; z-index: 2;
+  }
+  .card .el { font-size: 11px; letter-spacing: 2px; font-weight: bold; }
+  .card .el.flame { color: #b3401f; } .card .el.tide { color: #2266a0; }
+  .card .el.thorn { color: #2e6b2e; } .card .el.gale { color: #8a6d1f; }
+  .card .art { font-size: 40px; line-height: 1.15; margin-top: 2px; }
+  .card .name { font-size: 14px; font-weight: bold; line-height: 1.1; margin-top: 2px; min-height: 30px; }
+  .card .fx { font-size: 11.5px; font-style: italic; color: #5a4a28; line-height: 1.25; margin-top: 2px; }
+  .card .key { position: absolute; bottom: 3px; right: 6px; font-size: 10px; color: #8a7a55; }
+  .card.playable { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+  .card.playable:hover { transform: translateY(-14px); box-shadow: 0 12px 20px rgba(0,0,0,.65); }
+  .card.selected { transform: translateY(-14px); outline: 3px solid var(--gold); }
+  .card.too-expensive { opacity: .55; filter: grayscale(.5); }
+  .card.back {
+    background: repeating-linear-gradient(45deg, #4a2c14 0 10px, #6b3d1c 10px 20px);
+    border-color: #2c1a0a; color: var(--gold);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px;
+  }
+  .card.back .crest { font-size: 44px; }
+  .card.back .lbl { font-size: 10px; letter-spacing: 2px; }
+  .card.small { width: 84px; height: 120px; padding: 20px 6px 5px; }
+  .card.small .art { font-size: 30px; }
+  .card.small .name { font-size: 12px; min-height: 24px; }
+  .card.small .fx { font-size: 10px; }
+  .card.played { animation: laydown .35s ease; }
+  @keyframes laydown { from { transform: translateY(18px) scale(.92); opacity: .4; } }
+  .card.winner-glow { outline: 3px solid var(--gold); box-shadow: 0 0 22px rgba(232,182,76,.75); }
+  /* ---------- middle table ---------- */
+  #middle { flex: 1; display: flex; align-items: center; justify-content: center; gap: 26px;
+    min-height: 170px; border-top: 1px solid rgba(232,182,76,.25);
+    border-bottom: 1px solid rgba(232,182,76,.25); margin: 6px 0; padding: 8px 0; }
+  #clash { width: 300px; text-align: center; }
+  #clash .vs { font-size: 30px; color: var(--gold); letter-spacing: 4px; margin: 2px 0; }
+  #banner { font-size: 21px; font-weight: bold; min-height: 28px; color: var(--gold);
+    text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  #banner.bad { color: #ff8a75; }
+  #banner.good { color: #8fd694; }
+  #log { font-size: 14px; color: var(--ink-dim); font-style: italic; min-height: 40px; line-height: 1.4; }
+  #hint { font-size: 13px; color: var(--ink-dim); margin-top: 6px; }
+  #hint b { color: var(--ink); }
+  .played-slot { width: 118px; min-height: 150px; display: flex; align-items: center; justify-content: center; }
+  .played-slot .empty { color: rgba(244,234,210,.35); font-size: 13px; font-style: italic;
+    border: 2px dashed rgba(244,234,210,.25); border-radius: 10px; padding: 46px 8px; text-align: center; }
+  /* ---------- overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(5, 10, 7, .82); z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    width: 620px; max-width: 92vw; background: linear-gradient(170deg, #1e3a2a, #101f16);
+    border: 2px solid var(--gold-dim); border-radius: 14px; padding: 28px 34px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7);
+  }
+  .panel h2 { margin: 0 0 6px; font-size: 40px; letter-spacing: 4px; color: var(--gold); }
+  .panel h3 { margin: 0 0 10px; font-size: 17px; color: var(--ink-dim); font-weight: normal; font-style: italic; }
+  .panel p { font-size: 15px; line-height: 1.55; color: var(--ink); text-align: left; }
+  .panel .rules { text-align: left; font-size: 14.5px; line-height: 1.6; }
+  .panel .rules b { color: var(--gold); }
+  .panel .big { font-size: 19px; text-align: center; }
+  .panel .score-line { font-size: 16px; color: var(--ink-dim); }
+  .panel .score-line b { color: var(--gold); }
+  .bigbtn {
+    margin-top: 16px; background: linear-gradient(180deg, #f0c25e, #c9972e); color: #241a08;
+    border: none; border-radius: 8px; padding: 13px 34px; font-family: inherit;
+    font-size: 19px; font-weight: bold; letter-spacing: 1px; cursor: pointer;
+  }
+  .bigbtn:hover { filter: brightness(1.1); }
+  .elkey { font-size: 13px; color: var(--ink-dim); margin-top: 12px; line-height: 1.7; }
+  .elkey i { font-style: normal; font-weight: bold; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-width: 900px) { .card { width: 88px; height: 132px; } .meters { width: 190px; } }
+</style>
+</head>
+<body>
+<div id="table">
+  <div id="topbar">
+    <h1>EMBER COURT<span>A DUEL OF CUNNING CARDS</span></h1>
+    <div id="roundbox">Round <b id="roundnum">1</b> / 12<br><span id="deckline">Deck: 24 cards</span></div>
+    <button class="tbtn" id="btn-mulligan" title="Once per game: discard your hand and draw 5 fresh cards (M)">Mulligan (M)</button>
+    <button class="tbtn" id="btn-sound" title="Toggle sound (S)">Sound: on</button>
+    <button class="tbtn" id="btn-help" title="How to play (H)">How to play</button>
+    <button class="tbtn" id="btn-new" title="Start a new duel (N)">New game</button>
+  </div>
+
+  <div class="side" id="foe-side">
+    <div class="portrait"><div class="face">&#128081;</div><div class="who"><b>ASH DUCHESS</b>AI OPPONENT</div></div>
+    <div class="meters">
+      <div class="lifebar"><i id="foe-life-fill" style="width:100%"></i><span id="foe-life-text">20 / 20 LIFE</span></div>
+      <div class="emberrow">Ember <span id="foe-embers"></span><span id="foe-ember-num"></span></div>
+      <div class="tricks">Tricks won: <b id="foe-tricks">0</b> &nbsp;|&nbsp; Shield: <b id="foe-shield">0</b></div>
+    </div>
+    <div class="hand" id="foe-hand"></div>
+  </div>
+
+  <div id="middle">
+    <div class="played-slot" id="you-played"><div class="empty">Your card<br>goes here</div></div>
+    <div id="clash">
+      <div id="banner">Choose a card to play</div>
+      <div class="vs">⚔</div>
+      <div id="log">The Duchess shuffles her hand and waits. Flame beats Thorn, Thorn beats Tide, Tide beats Flame — a winning element strikes +2 power.</div>
+      <div id="hint">Click a card or press <b>1–5</b> to play it. <b>Enter</b> continues after a clash.</div>
+    </div>
+    <div class="played-slot" id="foe-played"><div class="empty">The Duchess<br>plays here</div></div>
+  </div>
+
+  <div class="side" id="you-side">
+    <div class="portrait you"><div class="face">&#129333;</div><div class="who"><b>YOU</b>CHALLENGER</div></div>
+    <div class="meters">
+      <div class="lifebar you"><i id="you-life-fill" style="width:100%"></i><span id="you-life-text">20 / 20 LIFE</span></div>
+      <div class="emberrow">Ember <span id="you-embers"></span><span id="you-ember-num"></span></div>
+      <div class="tricks">Tricks won: <b id="you-tricks">0</b> &nbsp;|&nbsp; Shield: <b id="you-shield">0</b> &nbsp;|&nbsp; Favor: <b id="favor">–</b></div>
+    </div>
+    <div class="hand" id="you-hand"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-title">
+  <div class="panel">
+    <h2>EMBER COURT</h2>
+    <h3>A duel of cunning cards against the Ash Duchess</h3>
+    <p class="big">You sit at the Ember Court with <b>20 life</b>. Each round you and the
+    Duchess each play one card face down, then reveal. The stronger card wins the trick
+    and wounds the loser. Reduce her to <b>0 life</b> — or hold more life after 12 rounds — to take the Court.</p>
+    <div class="rules">
+      <b>Ember is your cost.</b> Every card costs ember to play; you gain ember each round (3, then +1 a round, up to 6). Unspent ember carries over.<br>
+      <b>Elements matter.</b> <i style="color:#e0653a">Flame</i> beats <i style="color:#5da85a">Thorn</i>, <i style="color:#5da85a">Thorn</i> beats <i style="color:#4f9fd8">Tide</i>, <i style="color:#4f9fd8">Tide</i> beats <i style="color:#e0653a">Flame</i> — a winning element strikes at +2 power. <i style="color:#c9a86a">Gale</i> bows to none.<br>
+      <b>Win the trick, wound the foe.</b> Damage equals the power gap. A tie wounds you both for 1. Two tricks in a row earns <b>Court Favor</b>: +1 ember every round.<br>
+      <b>Cards carry tricks of their own:</b> draw extra cards, heal, raise a shield, or siphon the Duchess's ember.<br>
+      <b>Keys:</b> 1–5 play a card &nbsp;·&nbsp; M mulligan (once a game) &nbsp;·&nbsp; Enter continue &nbsp;·&nbsp; N new game &nbsp;·&nbsp; S sound
+    </div>
+    <button class="bigbtn" id="btn-start">Take Your Seat</button>
+    <div class="elkey">An original game — no borrowed cards, characters or art.</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay-end">
+  <div class="panel">
+    <h2 id="end-title">VICTORY</h2>
+    <h3 id="end-sub">The Court is yours.</h3>
+    <p class="big score-line" id="end-score"></p>
+    <p class="score-line" id="end-detail"></p>
+    <button class="bigbtn" id="btn-again">Play Again</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay-help">
+  <div class="panel">
+    <h2 style="font-size:28px">HOW TO PLAY</h2>
+    <div class="rules">
+      <b>Your turn:</b> click a card in your hand (or press 1–5). If it costs more ember than you hold, it stays greyed out — pick another.<br><br>
+      <b>The clash:</b> both cards turn over at once. Power + element bonus decides it. The winner deals damage equal to the gap; the loser loses that much life. A tie deals 1 damage to each side.<br><br>
+      <b>After the clash:</b> the winner banks +1 ember and both sides draw back up to 5 cards. Shields block damage first; healing and siphons fire the moment a card is played.<br><br>
+      <b>Winning:</b> drop the Duchess to 0 life, or finish 12 rounds ahead on life. Lose all your life and the Court keeps your seat.
+    </div>
+    <button class="bigbtn" id="btn-close-help">Back to the Table</button>
+  </div>
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
